@@ -1,7 +1,7 @@
 #!/bin/bash
 cd $GITHUB_WORKSPACE
 
-if git status | grep -q "Changes not staged for commit"; then
+if git status | grep -q "git add"; then
     echo New strings available. Pushing to GitHub...
     BRANCH=tx-$(date +"%Y%m%d%H%M%S")
     git checkout -b $BRANCH
