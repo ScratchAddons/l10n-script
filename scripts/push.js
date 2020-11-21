@@ -9,7 +9,7 @@ if (!process.env.TX_TOKEN) {
     process.exit(1);
 }
 
-const SA_ROOT = process.env.SA_ROOT || "./clone";
+const SA_ROOT = process.env.SA_ROOT || process.env.INPUT_CHECKOUTDIR || "./clone";
 
 const logUpload = result => console.log(
     chalk`Added\t{cyan ${result.strings_added}} string(s)

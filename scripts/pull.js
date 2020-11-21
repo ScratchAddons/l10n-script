@@ -10,7 +10,7 @@ if (!process.env.TX_TOKEN) {
     process.exit(1);
 }
 
-const SA_ROOT = process.env.SA_ROOT || "./clone";
+const SA_ROOT = process.env.SA_ROOT || process.env.INPUT_CHECKOUTDIR || "./clone";
 
 // Number of files it can write at the same time
 const WRITE_CONCURRENCY = 10;

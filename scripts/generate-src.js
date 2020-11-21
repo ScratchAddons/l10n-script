@@ -11,7 +11,7 @@ const iconify = settingName => settingName.replace(
 */
 
 export default async () => {
-    const SA_ROOT = process.env.SA_ROOT || "./clone";
+    const SA_ROOT = process.env.SA_ROOT || process.env.INPUT_CHECKOUTDIR || "./clone";
     
     let messages = {};
 
