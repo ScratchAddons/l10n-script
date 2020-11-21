@@ -1,6 +1,10 @@
 name: "Scratch Addons"
 author: "apple502j"
 description: "Push and pull strings via Transifex."
+inputs:
+  ghToken:
+    description: 'GitHub Token'
+    required: true
 runs:
     using: "composite"
     steps:
