@@ -2,13 +2,13 @@ name: "Scratch Addons"
 author: "apple502j"
 description: "Push and pull strings via Transifex."
 inputs:
-  ghToken:
+  token:
     description: 'GitHub Token'
     required: true
 runs:
     using: "composite"
     steps:
-        - run: npm install
+        - run: npm ci
           shell: bash
           working-directory: ${{ github.action_path }}
           name: "Install dependencies"
