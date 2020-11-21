@@ -57,10 +57,10 @@ const writeLocale = async item => {
                     delete translationJSON[key];
                 }
             }
-            const prettier = JSON.stringify(translationJSON, null, 2);
-            if (prettier === "{}") return;
+            const restringified = JSON.stringify(translationJSON);
+            if (restringified === "{}") return;
             await mkdirp(path);
-            await fs.writeFile(`${path}messages.json`, prettier, "utf8");
+            await fs.writeFile(`${path}messages.json`, restringified, "utf8");
             break;
         case "addons-translation":
             // Addons translation is weird. We need to separate the addons by keys.
@@ -75,23 +75,23 @@ const writeLocale = async item => {
             let hasGeneral = false;
             path = `${SA_ROOT}/addons-l10n/${saLocale}/`;
             await eachLimit(Object.keys(translations), WRITE_CONCURRENCY, async addonId => {
-                const prettier = JSON.stringify(translations[addonId], null, 2);
-                if (prettier === "{}") return;
+                const restringified = JSON.stringify(translations[addonId]);
+                if (restringified === "{}") return;
                 if (addonId === "_general") {
                     hasGeneral = true;
                     return;
                 }
                 await mkdirp(path);
-                await fs.writeFile(`${path}${addonId}.json`, prettier, "utf8");
+                await fs.writeFile(`${path}${addonId}.json`, restringified, "utf8");
                 generated = true;
             });
             // Generate _general.json if
             // 1) _general.json has translation (excluding _locale/_locale_name), OR
             // 2) other parts are translated
             if (generated || hasGeneral) {
-                const prettier = JSON.stringify(generalTranslation, null, 2);
+                const restringified = JSON.stringify(generalTranslation);
                 await mkdirp(path);
-                await fs.writeFile(`${path}_general.json`, prettier, "utf8");
+                await fs.writeFile(`${path}_general.json`, restringified, "utf8");
             }
             break;
     }
