@@ -65,13 +65,33 @@ const writeLocale = async item => {
             // Addons translation is weird. We need to separate the addons by keys.
             console.log(chalk`Pulled Addons Translation (addons-l10n): {cyan ${saLocale}}`);
             const translations = splitTranslation(translationJSON);
+            const resolver = new Intl.DisplayNames([saLocale], {type: "language"});
+            const generalTranslation = Object.assign({
+                _locale: saLocale,
+                _locale_name: resolver.of(saLocale)
+            }, translations._general);
+            let generated = false;
+            let hasGeneral = false;
+            const path = `${SA_ROOT}/addons-l10n/${saLocale}/`;
             await eachLimit(Object.keys(translations), WRITE_CONCURRENCY, async addonId => {
-                const path = `${SA_ROOT}/addons-l10n/${saLocale}/`;
                 const prettier = JSON.stringify(translations[addonId], null, 2);
                 if (prettier === "{}") return;
+                if (addonId === "_general") {
+                    hasGeneral = true;
+                    return;
+                }
                 await mkdirp(path);
                 await fs.writeFile(`${path}${addonId}.json`, prettier, "utf8");
+                generated = true;
             });
+            // Generate _general.json if
+            // 1) _general.json has translation (excluding _locale/_locale_name), OR
+            // 2) other parts are translated
+            if (generated || hasGeneral) {
+                const prettier = JSON.stringify(generalTranslation, null, 2);
+                await mkdirp(path);
+                await fs.writeFile(`${path}_general.json`, prettier, "utf8");
+            }
             break;
     }
 };
