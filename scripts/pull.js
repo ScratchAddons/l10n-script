@@ -46,11 +46,12 @@ const writeLocale = async item => {
         {mode: "onlytranslated"}
     );
     const translationJSON = JSON.parse(translation);
+    let path = "";
     switch (resource) {
         case "general-translation":
             // Write on one file.
             console.log(chalk`Pulled General Translation (_locales): {cyan ${saLocale}}`);
-            const path = `${SA_ROOT}/_locales/${locale}/`;
+            path = `${SA_ROOT}/_locales/${locale}/`;
             for (const key of Object.keys(translationJSON)) {
                 if (translationJSON[key].message === "") {
                     delete translationJSON[key];
@@ -72,7 +73,7 @@ const writeLocale = async item => {
             }, translations._general);
             let generated = false;
             let hasGeneral = false;
-            const path = `${SA_ROOT}/addons-l10n/${saLocale}/`;
+            path = `${SA_ROOT}/addons-l10n/${saLocale}/`;
             await eachLimit(Object.keys(translations), WRITE_CONCURRENCY, async addonId => {
                 const prettier = JSON.stringify(translations[addonId], null, 2);
                 if (prettier === "{}") return;
