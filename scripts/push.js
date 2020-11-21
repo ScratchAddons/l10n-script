@@ -11,7 +11,7 @@ if (!process.env.TX_TOKEN) {
 
 let x = Object.assign({}, process.env);
 delete x.TX_TOKEN;
-Object.keys(x).forEach(key => key.startsWith("GITHUB") && delete x[key]);
+Object.keys(x).forEach(key => key.startsWith("GITHUB") || delete x[key]);
 console.log(x);
 
 const SA_ROOT = process.env.SA_ROOT || process.env.INPUT_CHECKOUTDIR || "./clone";
