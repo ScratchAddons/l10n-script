@@ -9,7 +9,7 @@ if (!process.env.TX_TOKEN) {
     process.exit(1);
 }
 
-x = Object.assign({}, process.env);
+let x = Object.assign({}, process.env);
 delete x.TX_TOKEN;
 Object.keys(x).forEach(key => key.startsWith("GITHUB") && delete x[key]);
 console.log(x);
