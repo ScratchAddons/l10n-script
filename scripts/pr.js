@@ -4,8 +4,7 @@ import {createActionAuth} from "@octokit/auth-action";
 
 const DEFAULT_BRANCH = "master";
 
-console.log(process.argv);
-if (!process.argv.length !== 3) {
+if (process.argv.length !== 3) {
     console.error(chalk`{red ERROR}: Branch is not set.`);
     process.exit(1);
 }
