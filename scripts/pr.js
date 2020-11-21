@@ -29,6 +29,6 @@ await octokit.pulls.create(loggy({
     repo,
     title: `Translation update: ${year}/${month}/${date}`,
     head: `${owner}:${branch}`,
-    base: `${owner}:${DEFAULT_BRANCH}`,
+    base: DEFAULT_BRANCH,
     body: "Daily translation update (via GitHub Actions)."
 }));
