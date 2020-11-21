@@ -1,5 +1,5 @@
 #!/bin/bash
-cd $SA_ROOT
+cd $GITHUB_WORKSPACE
 
 if git status | grep -q "Changes not staged for commit"; then
     echo New strings available. Pushing to GitHub...
