@@ -22,11 +22,13 @@ const year = now.getFullYear();
 const month = String(now.getMonth() + 1).padStart(2, "0");
 const date = String(now.getDate()).padStart(2, "0");
 
-await octokit.pulls.create({
+const loggy = x => console.log(x) || x;
+
+await octokit.pulls.create(loggy({
     owner,
     repo,
     title: `Translation update: ${year}/${month}/${date}`,
     head: `${owner}:${branch}`,
     base: `${owner}:${DEFAULT_BRANCH}`,
     body: "Daily translation update (via GitHub Actions)."
-});
+}));
