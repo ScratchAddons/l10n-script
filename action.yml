@@ -12,12 +12,15 @@ runs:
           shell: bash
         - run: npm install
           shell: bash
+          working-directory: ${{ github.action_path }}
           name: "Install dependencies"
         - run: npm run push
           shell: bash
+          working-directory: ${{ github.action_path }}
           name: "Push new strings"
         - run: npm run pull
           shell: bash
+          working-directory: ${{ github.action_path }}
           name: "Pull new strings"
         - run: bash $GITHUB_ACTION_PATH/scripts/commit.sh
           shell: bash
