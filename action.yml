@@ -1,0 +1,24 @@
+name: "Scratch Addons"
+author: "apple502j"
+description: "Push and pull strings via Transifex."
+inputs:
+    checkoutDir:
+        description: "Checkout directory of the repo"
+        required: true
+runs:
+    using: "composite"
+    steps:
+        - run: echo "SA_ROOT=$INPUT_CHECKOUTDIR" >> $GITHUB_ENV
+          shell: bash
+        - run: npm install
+          shell: bash
+          name: "Install dependencies"
+        - run: npm run push
+          shell: bash
+          name: "Push new strings"
+        - run: npm run pull
+          shell: bash
+          name: "Pull new strings"
+        - run: bash $GITHUB_ACTION_PATH/scripts/commit.sh
+          shell: bash
+          name: "Push to GitHub"
