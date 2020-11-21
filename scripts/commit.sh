@@ -14,5 +14,5 @@ if git status | grep -q "git add"; then
     git push origin $BRANCH
     echo Pushed as $BRANCH
     
-    node $GITHUB_ACTION_PATH/scripts/pr.js
+    node $GITHUB_ACTION_PATH/scripts/pr.js $BRANCH
 fi

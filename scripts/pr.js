@@ -4,10 +4,11 @@ import {createActionAuth} from "@octokit/auth-action";
 
 const DEFAULT_BRANCH = "master";
 
-if (!process.env.BRANCH) {
-    console.error(chalk`{red ERROR}: BRANCH is not set.`);
+if (!process.argv.length !== 3) {
+    console.error(chalk`{red ERROR}: Branch is not set.`);
     process.exit(1);
 }
+const branch = process.argv[2];
 
 const octokit = new Octokit({
     authStrategy: createActionAuth,
@@ -25,7 +26,7 @@ await octokit.pulls.create({
     owner,
     repo,
     title: `Translation update: ${year}/${month}/${date}`,
-    head: `${owner}:${process.env.BRANCH}`,
+    head: `${owner}:${branch}`,
     base: `${owner}:${DEFAULT_BRANCH}`,
     body: "Daily translation update (via GitHub Actions)."
 });
