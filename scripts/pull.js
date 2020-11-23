@@ -54,7 +54,7 @@ const writeLocale = async item => {
         "scratch-addons-extension",
         resource,
         locale,
-        {mode: "developer"}
+        {mode: "default"}
     );
     const translationJSON = JSON.parse(translation);
     let path = "";
