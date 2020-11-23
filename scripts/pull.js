@@ -4,6 +4,7 @@ import {eachLimit} from "async";
 import {default as chalk} from "chalk";
 import {default as mkdirp} from "mkdirp";
 import {default as Transifex} from "transifex";
+import generateSource from "./generate-src.js";
 
 if (!process.env.TX_TOKEN) {
     console.error(chalk`{red ERROR}: TX_TOKEN is not set.`);
@@ -25,12 +26,22 @@ const tx = new Transifex({
 const metadata = await promisify(tx.projectInstanceMethods.bind(tx))("scratch-addons-extension");
 const languages = metadata.teams;
 
+let source = {};
+try {
+    // push.js should create the file
+    const sourceFile = await fs.readFile("addons-source.json", "utf8");
+    source = JSON.parse(sourceFile);
+} catch (e) {
+    if (e.code !== "ENOENT") throw e;
+    source = await generateSource();
+}
+
 const splitTranslation = translation => {
     const result = {};
     Object.keys(translation).forEach(key => {
         const addonId = key.includes("/") ? key.split("/")[0] : "_general";
         if (!result[addonId]) result[addonId] = {};
-        if (translation[key] === "") return;
+        if (translation[key] === "" || translation[key] === source[key]) return;
         result[addonId][key] = translation[key];
     });
     return result;
