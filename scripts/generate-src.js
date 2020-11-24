@@ -3,7 +3,7 @@ import fs from "fs/promises";
 
 const iconify = settingName => settingName.replace(
     /@([\w-]+)\.svg/g,
-    (_, iconName) => `$${iconName === "studio-add" ? "studioAdd" : iconName}Icon$`
+    (_, iconName) => `{${iconName === "studio-add" ? "studioAdd" : iconName}Icon}`
 );
 
 /*
