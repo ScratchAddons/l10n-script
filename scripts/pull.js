@@ -42,6 +42,7 @@ const splitTranslation = translation => {
         const addonId = key.includes("/") ? key.split("/")[0] : "_general";
         if (!result[addonId]) result[addonId] = {};
         if (translation[key] === source[key]) return;
+        if (translation[key] === "") return;
         result[addonId][key] = translation[key];
     });
     return result;
@@ -54,7 +55,7 @@ const writeLocale = async item => {
         "scratch-addons-extension",
         resource,
         locale,
-        {mode: "default"}
+        {mode: resource === "general-translation" ? "onlytranslated" : "default"}
     );
     const translationJSON = JSON.parse(translation);
     let path = "";
