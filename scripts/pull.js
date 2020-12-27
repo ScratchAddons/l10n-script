@@ -65,8 +65,14 @@ const writeLocale = async item => {
             console.log(chalk`Pulled General Translation (_locales): {cyan ${saLocale}}`);
             path = `${SA_ROOT}/_locales/${locale}/`;
             for (const key of Object.keys(translationJSON)) {
-                if (key !== "extensionName" && translationJSON[key].message === "") {
-                    delete translationJSON[key];
+                if (translationJSON[key].message === "") {
+                    if (key === "extensionName") {
+                      translationJSON[key] = {
+                        message: "Scratch Addons"
+                      };
+                    } else {
+                      delete translationJSON[key];
+                    }
                 }
             }
             const restringified = JSON.stringify(translationJSON);
