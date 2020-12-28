@@ -66,14 +66,13 @@ const writeLocale = async item => {
             path = `${SA_ROOT}/_locales/${locale}/`;
             for (const key of Object.keys(translationJSON)) {
                 if (translationJSON[key].message === "") {
-                    if (key === "extensionName") {
-                      translationJSON[key] = {
-                        message: "Scratch Addons"
-                      };
-                    } else {
-                      delete translationJSON[key];
-                    }
+                  delete translationJSON[key];
                 }
+            }
+            if (Object.keys(translationJSON).length && !translationJSON.extensionName) {
+                translationJSON.extensionName = {
+                    message: "Scratch Addons"
+                };
             }
             const restringified = JSON.stringify(translationJSON);
             if (restringified === "{}") return;
