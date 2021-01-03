@@ -41,13 +41,13 @@ export default async () => {
             const addonManifest = JSON.parse(addonManifestFile);
             
             if (addonManifest.l10n) {
-                // Addon name, description, notice, warning
+                // Addon name, description
                 addonMessages[`${addonId}/@name`] = addonManifest.name;
                 addonMessages[`${addonId}/@description`] = addonManifest.description;
-                for (const optionalProp of ["notice", "warning"]) {
-                    if (addonManifest[optionalProp]) {
-                        addonMessages[`${addonId}/@${optionalProp}`] = addonManifest[optionalProp];
-                    }
+
+                // info (including warnings and notices)
+                for (const optionalInfo of (addonManifest.info || [])) {
+                  addonMessages[`${addonId}/@info-${optionalInfo.id}`] = optionalInfo.text;
                 }
                 
                 // Presets
