@@ -50,7 +50,7 @@ const splitTranslation = translation => {
 
 const writeLocale = async item => {
     const {locale, resource} = item;
-    const saLocale = locale.replace("_", "-");
+    const saLocale = locale.replace("_", "-").toLowerCase();
     const translation = await promisify(tx.translationInstanceMethod.bind(tx))(
         "scratch-addons-extension",
         resource,
@@ -123,3 +123,42 @@ const mapResources = resources => resources.map(
 const resources = await promisify(tx.resourcesSetMethod.bind(tx))("scratch-addons-extension");
 const mappedResources = mapResources(resources);
 await eachLimit(mappedResources, API_CONCURRENCY, writeLocale);
+
+// _locales: Merge pt-br to pt
+// For addons-l10n this is handled on extension side
+// Use IIFE for easy returning
+await (async () => {
+  let ptBRJSON;
+  try {
+    ptBRJSON = JSON.parse(await fs.readFile(`${SA_ROOT}/_locales/pt_BR/messages.json`, "utf8"));
+  } catch (e) {
+    if (e.code === "ENOENT") return;
+    throw e;
+  }
+  let ptJSON;
+  try {
+    ptJSON = JSON.parse(await fs.readFile(`${SA_ROOT}/_locales/pt/messages.json`, "utf8"));
+  } catch (e) {
+    if (e.code === "ENOENT") {
+      console.log(chalk`{green NOTE}: Portuguese translation copied from Portuguese (Brazil)`);
+      await mkdirp(`${SA_ROOT}/_locales/pt/`);
+      await fs.copyFile(
+        `${SA_ROOT}/_locales/pt_BR/messages.json`,
+        `${SA_ROOT}/_locales/pt/messages.json`
+      );
+      return;
+    }
+    throw e;
+  }
+  let changed = false;
+  for (const key of Object.keys(ptBRJSON)) {
+    if (!Object.prototype.hasOwnProperty.call(ptJSON, key)) {
+      ptJSON[key] = ptBRJSON[key];
+      changed = true;
+    }
+  }
+  if (changed) {
+    console.log(chalk`{green NOTE}: Portuguese translation merged from Portuguese (Brazil)`);
+    await fs.writeFile(`${SA_ROOT}/_locales/pt/messages.json`, JSON.stringify(ptJSON), "utf8");
+  }
+})();
