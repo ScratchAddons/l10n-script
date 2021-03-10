@@ -134,31 +134,11 @@ await (async () => {
   } catch (e) {
     if (e.code === "ENOENT") return;
     throw e;
-  }
-  let ptJSON;
-  try {
-    ptJSON = JSON.parse(await fs.readFile(`${SA_ROOT}/_locales/pt/messages.json`, "utf8"));
-  } catch (e) {
-    if (e.code === "ENOENT") {
-      console.log(chalk`{green NOTE}: Portuguese translation copied from Portuguese (Brazil)`);
-      await mkdirp(`${SA_ROOT}/_locales/pt/`);
-      await fs.copyFile(
-        `${SA_ROOT}/_locales/pt_BR/messages.json`,
-        `${SA_ROOT}/_locales/pt/messages.json`
-      );
-      return;
-    }
-    throw e;
-  }
-  let changed = false;
-  for (const key of Object.keys(ptBRJSON)) {
-    if (!Object.prototype.hasOwnProperty.call(ptJSON, key)) {
-      ptJSON[key] = ptBRJSON[key];
-      changed = true;
-    }
-  }
-  if (changed) {
-    console.log(chalk`{green NOTE}: Portuguese translation merged from Portuguese (Brazil)`);
-    await fs.writeFile(`${SA_ROOT}/_locales/pt/messages.json`, JSON.stringify(ptJSON), "utf8");
-  }
+  }  
+  console.log(chalk`{green NOTE}: Portuguese translation copied from Portuguese (Brazil)`);
+  await mkdirp(`${SA_ROOT}/_locales/pt_PT/`);
+  await fs.copyFile(
+    `${SA_ROOT}/_locales/pt_BR/messages.json`,
+    `${SA_ROOT}/_locales/pt_PT/messages.json`
+  );
 })();
