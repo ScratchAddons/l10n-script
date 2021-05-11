@@ -18,6 +18,10 @@ const WRITE_CONCURRENCY = 10;
 // Number of API requests it can make at the same time
 const API_CONCURRENCY = 5;
 
+// Require 90%> translation rate
+const GENERAL_THRESHOLD = 0.9;
+const ADDONS_THRESHOLD = 0.8;
+
 const tx = new Transifex({
     project_slug: "scratch-addons-extension",
     credential: `api:${process.env.TX_TOKEN}`
@@ -38,15 +42,20 @@ try {
 
 const splitTranslation = translation => {
     const result = {};
+    let c = 0;
     Object.keys(translation).forEach(key => {
         const addonId = key.includes("/") ? key.split("/")[0] : "_general";
         if (!result[addonId]) result[addonId] = {};
         if (translation[key] === source[key]) return;
         if (translation[key] === "") return;
         result[addonId][key] = translation[key];
+        c++;
     });
-    return result;
+    return [result, c];
 };
+
+const localesWithGeneral = [];
+const localesWithAddons = [];
 
 const writeLocale = async item => {
     const {locale, resource} = item;
@@ -59,15 +68,32 @@ const writeLocale = async item => {
     );
     const translationJSON = JSON.parse(translation);
     let path = "";
+    let n, all;
     switch (resource) {
         case "general-translation":
             // Write on one file.
             console.log(chalk`Pulled General Translation (_locales): {cyan ${saLocale}}`);
             path = `${SA_ROOT}/_locales/${locale}/`;
+            // Note: n is the number of **UN**AVAILABLE translations here
+            n = 0;
+            all = Object.keys(translationJSON).length;
             for (const key of Object.keys(translationJSON)) {
                 if (translationJSON[key].message === "") {
                   delete translationJSON[key];
+                  n++;
                 }
+            }
+            if ((n / all) > (1 - GENERAL_THRESHOLD)) {
+              try {
+                await fs.access(`${path}messages.json`);
+              } catch (e) {
+                if (e.code === "ENOENT") {
+                  const pct = 100 - Math.round(n / all * 100);
+                  console.log(chalk`{yellow WARN}: Threshold not reached for general (${pct}% translated): ${saLocale}`);
+                  break;
+                }
+                throw e;
+              }
             }
             if (Object.keys(translationJSON).length && !translationJSON.extensionName) {
                 translationJSON.extensionName = {
@@ -78,11 +104,25 @@ const writeLocale = async item => {
             if (restringified === "{}") return;
             await mkdirp(path);
             await fs.writeFile(`${path}messages.json`, restringified, "utf8");
+            localesWithGeneral.push(saLocale);
             break;
         case "addons-translation":
             // Addons translation is weird. We need to separate the addons by keys.
             console.log(chalk`Pulled Addons Translation (addons-l10n): {cyan ${saLocale}}`);
-            const translations = splitTranslation(translationJSON);
+            path = `${SA_ROOT}/addons-l10n/${saLocale}/`;
+            const [translations, available] = splitTranslation(translationJSON);
+            n = available;
+            all = Object.keys(source).length;
+            // Note: n is the number of AVAILABLE translations here
+            if ((n / all) < ADDONS_THRESHOLD) {
+              try {
+                await fs.access(`${path}_general.json`);
+              } catch (e) {
+                const pct = Math.round(n / all * 100);
+                console.log(chalk`{yellow WARN}: Threshold not reached for addons (${pct}% translated): ${saLocale}`);
+                break;
+              }
+            }
             const resolver = new Intl.DisplayNames([saLocale], {type: "language"});
             const generalTranslation = Object.assign({
                 _locale: saLocale,
@@ -90,7 +130,6 @@ const writeLocale = async item => {
             }, translations._general);
             let generated = false;
             let hasGeneral = false;
-            path = `${SA_ROOT}/addons-l10n/${saLocale}/`;
             await eachLimit(Object.keys(translations), WRITE_CONCURRENCY, async addonId => {
                 const restringified = JSON.stringify(translations[addonId]);
                 if (restringified === "{}") return;
@@ -109,6 +148,7 @@ const writeLocale = async item => {
                 const restringified = JSON.stringify(generalTranslation);
                 await mkdirp(path);
                 await fs.writeFile(`${path}_general.json`, restringified, "utf8");
+                localesWithAddons.push(saLocale);
             }
             break;
     }
@@ -142,3 +182,12 @@ await (async () => {
     `${SA_ROOT}/_locales/pt_PT/messages.json`
   );
 })();
+
+await Promise.all(localesWithAddons.map(l => {
+  if (localesWithGeneral.includes(l)) return;
+  console.log(chalk`{yellow WARN}: Removed ${l} from addons-l10n as _locale is missing!`)
+  return fs.rm(`${SA_ROOT}/addons-l10n/${l}`, {
+    force: true,
+    recursive: true
+  });
+}));
