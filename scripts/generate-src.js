@@ -40,47 +40,45 @@ export default async () => {
             const addonManifestFile = await fs.readFile(`${SA_ROOT}/addons/${addonId}/addon.json`, "utf8");
             const addonManifest = JSON.parse(addonManifestFile);
             
-            if (addonManifest.l10n) {
-                // Addon name, description
-                addonMessages[`${addonId}/@name`] = addonManifest.name;
-                addonMessages[`${addonId}/@description`] = addonManifest.description;
+            // Addon name, description
+            addonMessages[`${addonId}/@name`] = addonManifest.name;
+            addonMessages[`${addonId}/@description`] = addonManifest.description;
 
-                // info (including warnings and notices)
-                for (const optionalInfo of (addonManifest.info || [])) {
-                  addonMessages[`${addonId}/@info-${optionalInfo.id}`] = optionalInfo.text;
-                }
-                
-                // popup
-                if (addonManifest.popup) {
-                  addonMessages[`${addonId}/@popup-name`] = addonManifest.popup.name;
-                }
-                
-                // Presets
-                for (const preset of (addonManifest.presets || [])) {
-                    for (const prop of ["name", "description"]) {
-                        if (preset[prop]) {
-                            addonMessages[`${addonId}/@preset-${prop}-${preset.id}`] = preset[prop];
-                        }
+            // info (including warnings and notices)
+            for (const optionalInfo of (addonManifest.info || [])) {
+              addonMessages[`${addonId}/@info-${optionalInfo.id}`] = optionalInfo.text;
+            }
+            
+            // popup
+            if (addonManifest.popup) {
+              addonMessages[`${addonId}/@popup-name`] = addonManifest.popup.name;
+            }
+            
+            // Presets
+            for (const preset of (addonManifest.presets || [])) {
+                for (const prop of ["name", "description"]) {
+                    if (preset[prop]) {
+                        addonMessages[`${addonId}/@preset-${prop}-${preset.id}`] = preset[prop];
                     }
                 }
+            }
+            
+            // Settings
+            for (const setting of (addonManifest.settings || [])) {
+                addonMessages[`${addonId}/@settings-name-${setting.id}`] = iconify(setting.name);
                 
-                // Settings
-                for (const setting of (addonManifest.settings || [])) {
-                    addonMessages[`${addonId}/@settings-name-${setting.id}`] = iconify(setting.name);
-                    
-                    switch (setting.type) {
-                        case "string":
-                            addonMessages[`${addonId}/@settings-default-${setting.id}`] = setting.default;
-                            break;
-                        case "select":
-                            setting.potentialValues.forEach(potential => {
-                                if (!potential || !potential.id) return;
-                                addonMessages[
-                                    `${addonId}/@settings-select-${setting.id}-${potential.id}`
-                                ] = potential.name;
-                            });
-                            break;
-                    }
+                switch (setting.type) {
+                    case "string":
+                        addonMessages[`${addonId}/@settings-default-${setting.id}`] = setting.default;
+                        break;
+                    case "select":
+                        setting.potentialValues.forEach(potential => {
+                            if (!potential || !potential.id) return;
+                            addonMessages[
+                                `${addonId}/@settings-select-${setting.id}-${potential.id}`
+                            ] = potential.name;
+                        });
+                        break;
                 }
             }
         }
