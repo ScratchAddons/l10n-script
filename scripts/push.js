@@ -1,8 +1,11 @@
 import fs from "fs/promises";
 import {promisify} from "util";
+import {execFile} from "child_process";
 import {default as chalk} from "chalk";
-import {default as Transifex} from "transifex";
+import {default as mkdirp} from "mkdirp";
 import generateSource from "./generate-src.js";
+
+const TX_BIN = process.platform === "win32" ? "./.txbin/tx.exe" : "./.txbin/tx";
 
 if (!process.env.TX_TOKEN) {
     console.error(chalk`{red ERROR}: TX_TOKEN is not set.`);
@@ -11,32 +14,22 @@ if (!process.env.TX_TOKEN) {
 
 const SA_ROOT = process.env.SA_ROOT || process.env.GITHUB_WORKSPACE || "./clone";
 
-const logUpload = result => console.log(
-    chalk`Added\t{cyan ${result.strings_added}} string(s)
-Updated\t{green ${result.strings_updated}} string(s)
-Removed\t{yellow ${result.strings_delete}} string(s)`
-);
+await mkdirp("./.locale/general");
+await mkdirp("./.locale/addons");
 
-const tx = new Transifex({
-    project_slug: "scratch-addons-extension",
-    credential: `api:${process.env.TX_TOKEN}`
-});
+await fs.copyFile(`${SA_ROOT}/_locales/en/messages.json`, "./.locale/general/en.json");
 
-const generalSource = await fs.readFile(`${SA_ROOT}/_locales/en/messages.json`, "utf8");
-
-console.log("Uploading General Translation (_locales)");
-logUpload(await promisify(tx.uploadSourceLanguageMethod.bind(tx))(
-    "scratch-addons-extension",
-    "general-translation",
-    {content: generalSource}
-));
-
-console.log("Uploading Addons Translation (addons-l10n)");
 const addonsSource = JSON.stringify(await generateSource());
 await fs.writeFile("addons-source.json", addonsSource, "utf8");
+await fs.writeFile("./.locale/addons/en.json", addonsSource, "utf8");
 console.log(chalk`{gray NOTE}: English source file generated: addons-source.json`);
-logUpload(await promisify(tx.uploadSourceLanguageMethod.bind(tx))(
-    "scratch-addons-extension",
-    "addons-translation",
-    {content: addonsSource}
-));
+
+throw 1;
+
+const {stdout, stderr} = await promisify(execFile)(TX_BIN, ["push"], {
+  windowsHide: true
+});
+
+await promisify(process.stdout.write.bind(process.stdout))(stdout);
+await promisify(process.stderr.write.bind(process.stderr))(stderr);
+console.log(chalk`{gray NOTE}: Uploaded translations`);

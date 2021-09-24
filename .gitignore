@@ -109,3 +109,11 @@ addons-source.json
 
 # Cloned repo
 clone
+
+# Transifex CLI binary
+.txbin/
+tx-*.zip
+tx-*.tar.gz
+
+# Translations
+.locale/

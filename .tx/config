@@ -1,0 +1,12 @@
+[main]
+host=https://www.transifex.com
+
+[o:scratch-addons:p:scratch-addons-extension:r:general-translation]
+source_file = .locale/general/en.json
+file_filter = .locale/general/<lang>.json
+type = CHROME
+
+[o:scratch-addons:p:scratch-addons-extension:r:addons-translation]
+source_file = .locale/addons/en.json
+file_filter = .locale/addons/<lang>.json
+type = KEYVALUEJSON

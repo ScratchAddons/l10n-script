@@ -12,6 +12,10 @@ runs:
           shell: bash
           working-directory: ${{ github.action_path }}
           name: "Install dependencies"
+        - run: npm run download
+          shell: bash
+          working-directory: ${{ github.action_path }}
+          name: "Install Transifex CLI"
         - run: npm run push
           shell: bash
           working-directory: ${{ github.action_path }}

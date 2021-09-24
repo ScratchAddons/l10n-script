@@ -1,10 +1,12 @@
 import fs from "fs/promises";
 import {promisify} from "util";
+import {execFile} from "child_process";
 import {eachLimit} from "async";
 import {default as chalk} from "chalk";
 import {default as mkdirp} from "mkdirp";
-import {default as Transifex} from "transifex";
 import generateSource from "./generate-src.js";
+
+const TX_BIN = process.platform === "win32" ? "./.txbin/tx.exe" : "./.txbin/tx";
 
 if (!process.env.TX_TOKEN) {
     console.error(chalk`{red ERROR}: TX_TOKEN is not set.`);
@@ -13,22 +15,26 @@ if (!process.env.TX_TOKEN) {
 
 const SA_ROOT = process.env.SA_ROOT || process.env.GITHUB_WORKSPACE || "./clone";
 
-// Number of files it can write at the same time
-const WRITE_CONCURRENCY = 10;
-// Number of API requests it can make at the same time
-const API_CONCURRENCY = 5;
-
 // Require 90%> translation rate
 const GENERAL_THRESHOLD = 0.9;
 const ADDONS_THRESHOLD = 0.8;
 
-const tx = new Transifex({
-    project_slug: "scratch-addons-extension",
-    credential: `api:${process.env.TX_TOKEN}`
-});
+await mkdirp("./.locale/general");
+await mkdirp("./.locale/addons");
 
-const metadata = await promisify(tx.projectInstanceMethods.bind(tx))("scratch-addons-extension");
-const languages = metadata.teams;
+const pullResource = async (resource, threshold, mode) => {
+  const {stdout, stderr} = await promisify(execFile)(TX_BIN, ["pull", "-a", "--minimum-perc=" +  (threshold * 100).toFixed(), "--mode", mode, resource], {
+    windowsHide: true
+  });
+  await promisify(process.stdout.write.bind(process.stdout))(stdout);
+  await promisify(process.stderr.write.bind(process.stderr))(stderr);
+};
+await Promise.all([pullResource("scratch-addons-extension.general-translation", GENERAL_THRESHOLD, "onlytranslated"), pullResource("scratch-addons-extension.addons-translation", ADDONS_THRESHOLD, "default")]);
+console.log(chalk`{gray NOTE}: Pulled translations`);
+
+// Number of files it can write at the same time
+const WRITE_CONCURRENCY = 10;
+
 
 let source = {};
 try {
@@ -39,6 +45,8 @@ try {
     if (e.code !== "ENOENT") throw e;
     source = await generateSource();
 }
+
+const languages = (await fs.readdir("./.locale/general/")).filter(fn => fn.endsWith(".json") && fn !== "en.json").map(fn => fn.slice(0, -5));
 
 const splitTranslation = translation => {
     const result = {};
@@ -60,17 +68,18 @@ const localesWithAddons = [];
 const writeLocale = async item => {
     const {locale, resource} = item;
     const saLocale = locale.replace("_", "-").toLowerCase();
-    const translation = await promisify(tx.translationInstanceMethod.bind(tx))(
-        "scratch-addons-extension",
-        resource,
-        locale,
-        {mode: resource === "general-translation" ? "onlytranslated" : "default"}
-    );
+    let translation = "";
+    try {
+      translation = await fs.readFile(`./.locale/${resource}/${locale}.json`, "utf8");
+    } catch (e) {
+      if (e.code === "ENOENT") return;
+      throw e;
+    }
     const translationJSON = JSON.parse(translation);
     let path = "";
     let n, all;
     switch (resource) {
-        case "general-translation":
+        case "general":
             // Write on one file.
             console.log(chalk`Pulled General Translation (_locales): {cyan ${saLocale}}`);
             path = `${SA_ROOT}/_locales/${locale}/`;
@@ -106,7 +115,7 @@ const writeLocale = async item => {
             await fs.writeFile(`${path}messages.json`, restringified, "utf8");
             localesWithGeneral.push(saLocale);
             break;
-        case "addons-translation":
+        case "addons":
             // Addons translation is weird. We need to separate the addons by keys.
             console.log(chalk`Pulled Addons Translation (addons-l10n): {cyan ${saLocale}}`);
             path = `${SA_ROOT}/addons-l10n/${saLocale}/`;
@@ -156,13 +165,12 @@ const writeLocale = async item => {
 
 const mapResources = resources => resources.map(
     resource => languages.map(
-        language => ({resource: resource.slug, locale: language})
+        language => ({resource: resource, locale: language})
     )
 ).flat();
 
-const resources = await promisify(tx.resourcesSetMethod.bind(tx))("scratch-addons-extension");
-const mappedResources = mapResources(resources);
-await eachLimit(mappedResources, API_CONCURRENCY, writeLocale);
+const mappedResources = mapResources(["general", "addons"]);
+await eachLimit(mappedResources, WRITE_CONCURRENCY, writeLocale);
 
 // _locales: Merge pt-br to pt
 // For addons-l10n this is handled on extension side

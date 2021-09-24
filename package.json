@@ -8,15 +8,26 @@
         "@octokit/rest": "^18.10.0",
         "async": "^3.2.1",
         "chalk": "^4.1.2",
+        "jszip": "^3.7.1",
         "mkdirp": "^1.0.4",
-        "transifex": "^1.6.6"
+        "node-fetch": "^3.0.0",
+        "tar": "^6.1.11"
     },
     "scripts": {
         "push": "node ./scripts/push.js",
-        "pull": "node ./scripts/pull.js"
+        "pull": "node ./scripts/pull.js",
+        "download": "node ./scripts/download-tx-binary.js",
+        "update": "node ./scripts/update-tx-cli.js"
     },
     "type": "module",
     "engines": {
         "node": ">= 14.8.0"
+    },
+    "tx": {
+        "version": "0.0.2",
+        "sha256": {
+            "linux": "8ccda111ce8799e997c60f9ebdce0f0ca25c9beb233a456143a7df591b0eb2ae",
+            "windows": "d1877c11157d0a35dfefe5d1ba6319e6268e82ca8df5f86183b4ee4a7dfe5fa7"
+        }
     }
 }
