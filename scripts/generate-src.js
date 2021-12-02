@@ -43,12 +43,12 @@ export default async () => {
 
             // info (including warnings and notices)
             for (const optionalInfo of (addonManifest.info || [])) {
-              addonMessages[`${addonId}/@info-${optionalInfo.id}`] = optionalInfo.text;
+                addonMessages[`${addonId}/@info-${optionalInfo.id}`] = optionalInfo.text;
             }
             
             // popup
             if (addonManifest.popup) {
-              addonMessages[`${addonId}/@popup-name`] = addonManifest.popup.name;
+                addonMessages[`${addonId}/@popup-name`] = addonManifest.popup.name;
             }
             
             // Presets
@@ -60,12 +60,13 @@ export default async () => {
                 }
             }
             
-            // Settings
-            for (const setting of (addonManifest.settings || [])) {
-                addonMessages[`${addonId}/@settings-name-${setting.id}`] = iconify(setting.name);
-                
+            const generateSettings = (setting, tableId) => {
+                const settingId = tableId ? `${tableId}-${setting.id}` : setting.id;
+                addonMessages[`${addonId}/@settings-name-${settingId}`] = iconify(setting.name);
+
                 switch (setting.type) {
                     case "string":
+                        if (!setting.default) break;
                         addonMessages[`${addonId}/@settings-default-${setting.id}`] = setting.default;
                         break;
                     case "select":
@@ -76,6 +77,35 @@ export default async () => {
                             ] = potential.name;
                         });
                         break;
+                }
+            };
+            
+            const localizedSettings = [];
+            
+            // Settings
+            for (const setting of (addonManifest.settings || [])) {
+                generateSettings(setting);
+                if (setting.type === "string") localizedSettings.push(setting.id);
+                else if (setting.type === "table") {
+                    const localizedRows = [];
+                    setting.row.forEach(row => {
+                        generateSettings(row, setting.id);
+                        if (row.type === "string") localizedRows.push(row.id);
+                    });
+                    for (let i = 0; i < (setting.default || []).length; i++) {
+                        const defaultValues = setting.default[i];
+                        for (const localizedRow of localizedRows) {
+                            if (!defaultValues[localizedRow]) continue;
+                            addonMessages[`${addonId}/@settings-default-${setting.id}-${i}-${localizedRows}`] = defaultValues[localizedRow];
+                        }
+                    }
+                    for (let i = 0; i < (setting.presets || []).length; i++) {
+                        const preset = setting.presets[i];
+                        addonMessages[`${addonId}/@preset-${setting.id}-${i}`] = preset.name;
+                        for (const localizedRow of localizedRows) {
+                            addonMessages[`${addonId}/@preset-value-${setting.id}-${i}-${localizedRows}`] = preset.values[localizedRow];
+                        }
+                    }
                 }
             }
         }
