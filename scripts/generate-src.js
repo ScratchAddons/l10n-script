@@ -1,7 +1,4 @@
 import fs from "fs/promises";
-import {default as chalk} from "chalk";
-// import {getPlaceholders, makeJS} from "./generate-placeholders.js";
-
 
 const iconify = settingName => settingName.replace(
     /@([\w-]+)\.svg/g,
@@ -85,11 +82,5 @@ export default async () => {
         
         messages = Object.assign(addonMessages, messages);
     }
-    /*
-    const placeholders = getPlaceholders(messages);
-    const jsCode = makeJS(placeholders);
-    console.log(chalk`{gray NOTE}: Here is the code for setting the custom placeholders.\n\n`);
-    console.log(jsCode);
-    */
     return messages;
 };

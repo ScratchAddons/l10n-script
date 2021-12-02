@@ -109,3 +109,7 @@ addons-source.json
 
 # Cloned repo
 clone
+
+# Dev files
+.locale
+.txbin

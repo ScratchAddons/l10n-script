@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import {promisify} from "util";
-import {default as chalk} from "chalk";
+import chalk from "chalk-template";
 import {default as Transifex} from "transifex";
 import generateSource from "./generate-src.js";
 

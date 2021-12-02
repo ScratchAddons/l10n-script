@@ -1,4 +1,4 @@
-import {default as chalk} from "chalk";
+import chalk from "chalk-template";
 import {Octokit} from "@octokit/rest";
 import {createActionAuth} from "@octokit/auth-action";
 

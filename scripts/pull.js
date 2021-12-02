@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import {promisify} from "util";
+import chalk from "chalk-template";
 import {eachLimit} from "async";
-import {default as chalk} from "chalk";
 import {default as mkdirp} from "mkdirp";
 import {default as Transifex} from "transifex";
 import generateSource from "./generate-src.js";
