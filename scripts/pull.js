@@ -3,7 +3,7 @@ import {promisify} from "util";
 import chalk from "chalk-template";
 import {eachLimit} from "async";
 import {default as mkdirp} from "mkdirp";
-import {default as Transifex} from "transifex";
+import TransifexClient from "./txapi.js";
 import generateSource from "./generate-src.js";
 
 if (!process.env.TX_TOKEN) {
@@ -14,21 +14,19 @@ if (!process.env.TX_TOKEN) {
 const SA_ROOT = process.env.SA_ROOT || process.env.GITHUB_WORKSPACE || "./clone";
 
 // Number of files it can write at the same time
-const WRITE_CONCURRENCY = 10;
+const WRITE_CONCURRENCY = 20;
 // Number of API requests it can make at the same time
-const API_CONCURRENCY = 5;
+const API_CONCURRENCY = 15;
 
 // Require 90%> translation rate
 const GENERAL_THRESHOLD = 0.9;
 const ADDONS_THRESHOLD = 0.8;
 
-const tx = new Transifex({
-    project_slug: "scratch-addons-extension",
-    credential: `api:${process.env.TX_TOKEN}`
-});
+const PROJECT_SLUG = "o:scratch-addons:p:scratch-addons-extension";
 
-const metadata = await promisify(tx.projectInstanceMethods.bind(tx))("scratch-addons-extension");
-const languages = metadata.teams;
+const tx = new TransifexClient(process.env.TX_TOKEN);
+
+const languages = await tx.listLanguages(PROJECT_SLUG);
 
 let source = {};
 try {
@@ -59,21 +57,21 @@ const localesWithAddons = [];
 
 const writeLocale = async item => {
     const {locale, resource} = item;
-    const saLocale = locale.replace("_", "-").toLowerCase();
-    const translation = await promisify(tx.translationInstanceMethod.bind(tx))(
-        "scratch-addons-extension",
+    const saLocale = locale.replace("_", "-").replace("l:", "").toLowerCase();
+    console.log(chalk`Downloading {cyan ${saLocale}} for {cyan ${resource}}`);
+    const translation = await tx.downloadTranslation(
         resource,
         locale,
-        {mode: resource === "general-translation" ? "onlytranslated" : "default"}
+        {mode: resource === "o:scratch-addons:p:scratch-addons-extension:r:general-translation" ? "onlytranslated" : "default"}
     );
-    const translationJSON = JSON.parse(translation);
+    const translationJSON = JSON.parse(translation.toString("utf8"));
     let path = "";
     let n, all;
     switch (resource) {
-        case "general-translation":
+        case "o:scratch-addons:p:scratch-addons-extension:r:general-translation":
             // Write on one file.
             console.log(chalk`Pulled General Translation (_locales): {cyan ${saLocale}}`);
-            path = `${SA_ROOT}/_locales/${locale}/`;
+            path = `${SA_ROOT}/_locales/${locale.replace("l:", "")}/`;
             // Note: n is the number of **UN**AVAILABLE translations here
             n = 0;
             all = Object.keys(translationJSON).length;
@@ -106,7 +104,7 @@ const writeLocale = async item => {
             await fs.writeFile(`${path}messages.json`, restringified, "utf8");
             localesWithGeneral.push(saLocale);
             break;
-        case "addons-translation":
+        case "o:scratch-addons:p:scratch-addons-extension:r:addons-translation":
             // Addons translation is weird. We need to separate the addons by keys.
             console.log(chalk`Pulled Addons Translation (addons-l10n): {cyan ${saLocale}}`);
             path = `${SA_ROOT}/addons-l10n/${saLocale}/`;
@@ -156,11 +154,11 @@ const writeLocale = async item => {
 
 const mapResources = resources => resources.map(
     resource => languages.map(
-        language => ({resource: resource.slug, locale: language})
+        language => ({resource: resource.id, locale: language.id})
     )
 ).flat();
 
-const resources = await promisify(tx.resourcesSetMethod.bind(tx))("scratch-addons-extension");
+const resources = await tx.listResources(PROJECT_SLUG);
 const mappedResources = mapResources(resources);
 await eachLimit(mappedResources, API_CONCURRENCY, writeLocale);
 
@@ -174,7 +172,7 @@ await (async () => {
   } catch (e) {
     if (e.code === "ENOENT") return;
     throw e;
-  }  
+  }
   console.log(chalk`{green NOTE}: Portuguese translation copied from Portuguese (Brazil)`);
   await mkdirp(`${SA_ROOT}/_locales/pt_PT/`);
   await fs.copyFile(

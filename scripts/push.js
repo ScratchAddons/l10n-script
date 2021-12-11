@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import {promisify} from "util";
 import chalk from "chalk-template";
-import {default as Transifex} from "transifex";
+import TransifexClient from "./txapi.js";
 import generateSource from "./generate-src.js";
 
 if (!process.env.TX_TOKEN) {
@@ -12,31 +12,26 @@ if (!process.env.TX_TOKEN) {
 const SA_ROOT = process.env.SA_ROOT || process.env.GITHUB_WORKSPACE || "./clone";
 
 const logUpload = result => console.log(
-    chalk`Added\t{cyan ${result.strings_added}} string(s)
+    chalk`Added\t{cyan ${result.strings_created}} string(s)
 Updated\t{green ${result.strings_updated}} string(s)
-Removed\t{yellow ${result.strings_delete}} string(s)`
+Removed\t{yellow ${result.strings_deleted}} string(s)`
 );
 
-const tx = new Transifex({
-    project_slug: "scratch-addons-extension",
-    credential: `api:${process.env.TX_TOKEN}`
-});
+const tx = new TransifexClient(process.env.TX_TOKEN);
 
 const generalSource = await fs.readFile(`${SA_ROOT}/_locales/en/messages.json`, "utf8");
 
 console.log("Uploading General Translation (_locales)");
-logUpload(await promisify(tx.uploadSourceLanguageMethod.bind(tx))(
-    "scratch-addons-extension",
-    "general-translation",
-    {content: generalSource}
+logUpload(await tx.uploadSource(
+    "o:scratch-addons:p:scratch-addons-extension:r:general-translation",
+    generalSource
 ));
 
 console.log("Uploading Addons Translation (addons-l10n)");
 const addonsSource = JSON.stringify(await generateSource());
 await fs.writeFile("addons-source.json", addonsSource, "utf8");
 console.log(chalk`{gray NOTE}: English source file generated: addons-source.json`);
-logUpload(await promisify(tx.uploadSourceLanguageMethod.bind(tx))(
-    "scratch-addons-extension",
-    "addons-translation",
-    {content: addonsSource}
+logUpload(await tx.uploadSource(
+    "o:scratch-addons:p:scratch-addons-extension:r:addons-translation",
+    addonsSource
 ));
