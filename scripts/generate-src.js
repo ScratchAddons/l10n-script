@@ -11,7 +11,7 @@ const iconify = settingName => settingName.replace(
 
 export default async () => {
     const SA_ROOT = process.env.SA_ROOT || process.env.GITHUB_WORKSPACE || "./clone";
-    
+
     let messages = {};
 
     const addonIdsFile = await fs.readFile(`${SA_ROOT}/addons/addons.json`, "utf8");
@@ -28,15 +28,15 @@ export default async () => {
             // Only catch ENOENT
             if (e.code !== "ENOENT") throw e;
         }
-        
+
         // Delete fields that are not pushed to Transifex
         delete addonMessages._locale;
         delete addonMessages._locale_name;
-        
+
         if (addonId !== "_general") {
             const addonManifestFile = await fs.readFile(`${SA_ROOT}/addons/${addonId}/addon.json`, "utf8");
             const addonManifest = JSON.parse(addonManifestFile);
-            
+
             // Addon name, description
             addonMessages[`${addonId}/@name`] = addonManifest.name;
             addonMessages[`${addonId}/@description`] = addonManifest.description;
@@ -45,17 +45,17 @@ export default async () => {
             for (const optionalInfo of (addonManifest.info || [])) {
               addonMessages[`${addonId}/@info-${optionalInfo.id}`] = optionalInfo.text;
             }
-            
+
             // update
             if (addonManifest.latestUpdate?.temporaryNotice) {
               addonMessages[`${addonId}/@update`] = addonManifest.latestUpdate.temporaryNotice;
             }
-            
+
             // popup
             if (addonManifest.popup) {
               addonMessages[`${addonId}/@popup-name`] = addonManifest.popup.name;
             }
-            
+
             // Presets
             for (const preset of (addonManifest.presets || [])) {
                 for (const prop of ["name", "description"]) {
@@ -64,11 +64,18 @@ export default async () => {
                     }
                 }
             }
-            
+
+            // Credits
+            for (const credit of (addonManifest.credits || [])) {
+                if (credit.note) {
+                    addonMessages[`${addonId}/@credits-${credit.id}`] = credit.note;
+                }
+            }
+
             // Settings
             for (const setting of (addonManifest.settings || [])) {
                 addonMessages[`${addonId}/@settings-name-${setting.id}`] = iconify(setting.name);
-                
+
                 switch (setting.type) {
                     case "string":
                         addonMessages[`${addonId}/@settings-default-${setting.id}`] = setting.default;
@@ -84,7 +91,7 @@ export default async () => {
                 }
             }
         }
-        
+
         messages = Object.assign(addonMessages, messages);
     }
     return messages;
