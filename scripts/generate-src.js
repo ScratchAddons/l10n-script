@@ -46,6 +46,11 @@ export default async () => {
                 addonMessages[`${addonId}/@info-${optionalInfo.id}`] = optionalInfo.text;
             }
             
+            // update
+            if (addonManifest.latestUpdate?.temporaryNotice) {
+              addonMessages[`${addonId}/@update`] = addonManifest.latestUpdate.temporaryNotice;
+            }
+            
             // popup
             if (addonManifest.popup) {
                 addonMessages[`${addonId}/@popup-name`] = addonManifest.popup.name;
