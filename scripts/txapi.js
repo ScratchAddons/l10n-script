@@ -32,7 +32,7 @@ export default class TransifexClient {
     constructor (token, opts = {}) {
         this._token = token;
         this.endpoint = opts.endpoint || "https://rest.api.transifex.com";
-        this.maxRetries = opts.maxRetries || 10;
+        this.maxRetries = opts.maxRetries || 20;
         this.interval = opts.interval || 15;
     }
 
