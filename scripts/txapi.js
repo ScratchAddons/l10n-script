@@ -43,7 +43,7 @@ export default class TransifexClient {
         });
     }
 
-    async _asyncProcess (url, fetchOpts) {
+    async _asyncProcess (url, fetchOpts, slug = "") {
         const resp = await fetch(this.endpoint + url, Object.assign({}, fetchOpts, {
             headers: this._getHeaders(fetchOpts.headers || {}),
             method: "POST"
@@ -85,6 +85,7 @@ export default class TransifexClient {
                 );
             }
             await setTimeout(this.interval);
+            console.log(`Try ${i+1}, ${json?.data?.attributes?.status}, ${slug}`)
         }
     }
 
@@ -103,7 +104,8 @@ export default class TransifexClient {
             "/resource_strings_async_uploads",
             {
                 body: formData
-            }
+            },
+            slug
         );
         const details = json?.data?.attributes?.details || {};
         // Fix bugs in the deleted string detection
@@ -150,7 +152,8 @@ export default class TransifexClient {
                 headers: {
                     "Content-Type": "application/vnd.api+json"
                 }
-            }
+            },
+            slug + lang
         );
         return Buffer.from(resp, "base64");
     }
