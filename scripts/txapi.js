@@ -16,9 +16,7 @@
 */
 
 import {setTimeout} from "node:timers/promises";
-import fetch from "node-fetch";
-import Blob from "fetch-blob";
-import {FormData} from "formdata-polyfill/esm.min.js";
+import fetch, {Blob, FormData} from "node-fetch";
 
 export default class TransifexClient {
     /**
