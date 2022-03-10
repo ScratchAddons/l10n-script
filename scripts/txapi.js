@@ -54,8 +54,7 @@ export default class TransifexClient {
                 `Status code: ${resp.status}\nErrors: ${errors.map(e => `${e.title} (${e.detail})`).join("\n")}`
             );
         }
-        // TX doc says Content-Location, which is incorrect
-        const location = resp.headers.get("Location");
+        const location = resp.headers.get("Content-Location") || resp.headers.get("Location");
         let i = 0;
         while (true) {
             i++;
