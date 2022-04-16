@@ -5,12 +5,39 @@ const iconify = settingName => settingName.replace(
     (_, iconName) => `{${iconName === "studio-add" ? "studioAdd" : iconName}Icon}`
 );
 
+const hasNoValue = value => !value || (typeof value === "object" && "string" in value && !value.string);
+
+export const fixFormat = (format, addonMessages, { ignoreEmpty = false } = {}) => {
+    switch (format) {
+        case "keyvaluejson": {
+            for (const [key, value] of Object.entries(addonMessages)) {
+                if (hasNoValue(value) && ignoreEmpty) {
+                    delete addonMessages[key];
+                    continue;
+                }
+                addonMessages[key] = value.string || value;
+            }
+            break;
+        }
+        default: {
+            for (const [key, value] of Object.entries(addonMessages)) {
+                if (hasNoValue(value) && ignoreEmpty) {
+                    delete addonMessages[key];
+                } else if (typeof value.string === "undefined") addonMessages[key] = {
+                    string: value
+                };
+            }
+        }
+    }
+};
+
 /*
  * Generate Key-Value JSON source file from addons-l10n folder JSON.
 */
 
 export default async () => {
     const SA_ROOT = process.env.SA_ROOT || process.env.GITHUB_WORKSPACE || "./clone";
+    const SOURCE_MODE = process.env.SOURCE_MODE;
 
     let messages = {};
 
@@ -38,90 +65,132 @@ export default async () => {
             const addonManifest = JSON.parse(addonManifestFile);
 
             // Addon name, description
-            addonMessages[`${addonId}/@name`] = addonManifest.name;
-            addonMessages[`${addonId}/@description`] = addonManifest.description;
+            addonMessages[`${addonId}/@name`] = {
+                string: addonManifest.name,
+                developer_comment: "Name of an addon"
+            };
+            addonMessages[`${addonId}/@description`] = {
+                string: addonManifest.description,
+                developer_comment: `Description of addon "${addonManifest.name}"`
+            };
 
             // info (including warnings and notices)
             for (const optionalInfo of (addonManifest.info || [])) {
-                addonMessages[`${addonId}/@info-${optionalInfo.id}`] = optionalInfo.text;
+                addonMessages[`${addonId}/@info-${optionalInfo.id}`] = {
+                    string: optionalInfo.text,
+                    developer_comment: `Information displayed on settings for addon "${addonManifest.name}"`
+                };
             }
 
             // update
             if (addonManifest.latestUpdate?.temporaryNotice) {
-              addonMessages[`${addonId}/@update`] = addonManifest.latestUpdate.temporaryNotice;
+              addonMessages[`${addonId}/@update`] = {
+                  string: addonManifest.latestUpdate.temporaryNotice,
+                  developer_comment: `Update information for addon "${addonManifest.name}"`
+                };
             }
 
             // popup
             if (addonManifest.popup) {
-                addonMessages[`${addonId}/@popup-name`] = addonManifest.popup.name;
+                addonMessages[`${addonId}/@popup-name`] = {
+                    string: addonManifest.popup.name,
+                    developer_comment: `Name displayed on the popup for addon "${addonManifest.name}"`
+                }
             }
 
             // Presets
             for (const preset of (addonManifest.presets || [])) {
-                for (const prop of ["name", "description"]) {
-                    if (preset[prop]) {
-                        addonMessages[`${addonId}/@preset-${prop}-${preset.id}`] = preset[prop];
-                    }
+                if (preset.name) {
+                    addonMessages[`${addonId}/@preset-name-${preset.id}`] = {
+                        string: preset.name,
+                        developer_comment: `Preset name for addon "${addonManifest.name}"`
+                    };
+                }
+                if (preset.description) {
+                    addonMessages[`${addonId}/@preset-description-${preset.id}`] = {
+                        string: preset.description,
+                        developer_comment: `Preset description for addon "${addonManifest.name}"'s preset "${preset.name}"`
+                    };
                 }
             }
 
             // Credits
             for (const credit of (addonManifest.credits || [])) {
                 if (credit.note) {
-                    addonMessages[`${addonId}/@credits-${credit.id}`] = credit.note;
+                    addonMessages[`${addonId}/@credits-${credit.id}`] = {
+                        string: credit.note,
+                        developer_comment: `Credits note displayed on settings for addon "${addonManifest.name}"`
+                    };
                 }
             }
 
 
             const generateSettings = (setting, tableId) => {
                 const settingId = tableId ? `${tableId}-${setting.id}` : setting.id;
-                addonMessages[`${addonId}/@settings-name-${settingId}`] = iconify(setting.name);
+                addonMessages[`${addonId}/@settings-name-${settingId}`] = {
+                    string: iconify(setting.name),
+                    developer_comment: `Setting name for addon "${addonManifest.name}"`
+                };
 
                 switch (setting.type) {
                     case "string":
                         if (!setting.default) break;
-                        addonMessages[`${addonId}/@settings-default-${setting.id}`] = setting.default;
+                        addonMessages[`${addonId}/@settings-default-${setting.id}`] = {
+                            string: setting.default,
+                            developer_comment: `Default value for addon "${addonManifest.name}"'s setting "${setting.name}"`
+                        };
                         break;
                     case "select":
                         setting.potentialValues.forEach(potential => {
                             if (!potential || !potential.id) return;
                             addonMessages[
                                 `${addonId}/@settings-select-${setting.id}-${potential.id}`
-                            ] = potential.name;
+                            ] = {
+                                string: potential.name,
+                                developer_comment: `Dropdown option value for addon "${addonManifest.name}"'s setting "${setting.name}"`
+                            };
                         });
                         break;
                 }
             };
-            
-            const localizedSettings = [];
-            
+
             // Settings
             for (const setting of (addonManifest.settings || [])) {
                 generateSettings(setting);
-                if (setting.type === "string") localizedSettings.push(setting.id);
-                else if (setting.type === "table") {
-                    const localizedRows = [];
+                if (setting.type === "table") {
+                    const localizedRows = {};
                     setting.row.forEach(row => {
                         generateSettings(row, setting.id);
-                        if (row.type === "string") localizedRows.push(row.id);
+                        if (row.type === "string") localizedRows[row.id] = row.name;
                     });
                     for (let i = 0; i < (setting.default || []).length; i++) {
                         const defaultValues = setting.default[i];
-                        for (const localizedRow of localizedRows) {
+                        for (const [localizedRow, rowName] of Object.entries(localizedRows)) {
                             if (!defaultValues[localizedRow]) continue;
-                            addonMessages[`${addonId}/@settings-default-${setting.id}-${i}-${localizedRows}`] = defaultValues[localizedRow];
+                            addonMessages[`${addonId}/@settings-default-${setting.id}-${i}-${localizedRow}`] = {
+                                string: defaultValues[localizedRow],
+                                developer_comment: `Default value for addon "${addonManifest.name}"'s setting "${setting.name}"'s table row "${rowName}"`
+                            };
                         }
                     }
                     for (let i = 0; i < (setting.presets || []).length; i++) {
                         const preset = setting.presets[i];
-                        addonMessages[`${addonId}/@preset-${setting.id}-${i}`] = preset.name;
-                        for (const localizedRow of localizedRows) {
-                            addonMessages[`${addonId}/@preset-value-${setting.id}-${i}-${localizedRows}`] = preset.values[localizedRow];
+                        addonMessages[`${addonId}/@preset-${setting.id}-${i}`] = {
+                            string: preset.name,
+                            developer_comment: `Preset name for addon "${addonManifest.name}"'s setting "${setting.name}"`
+                        };
+                        for (const [localizedRow, rowName] of Object.entries(localizedRows)) {
+                            addonMessages[`${addonId}/@preset-value-${setting.id}-${i}-${localizedRow}`] = {
+                                string: preset.values[localizedRow],
+                                developer_comment: `Preset value for addon "${addonManifest.name}"'s setting "${setting.name}"'s table row "${rowName}"`
+                            };
                         }
                     }
                 }
             }
         }
+
+        fixFormat(SOURCE_MODE, addonMessages);
 
         messages = Object.assign(addonMessages, messages);
     }

@@ -14,7 +14,10 @@
     },
     "scripts": {
         "push": "node ./scripts/push.js",
-        "pull": "node ./scripts/pull.js"
+        "pull": "node ./scripts/pull.js",
+        "push-translation": "node ./scripts/push-translation.js",
+        "source": "node ./scripts/source.js",
+        "convert": "node ./scripts/convert.js"
     },
     "type": "module",
     "engines": {

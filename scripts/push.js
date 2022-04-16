@@ -1,5 +1,4 @@
 import fs from "fs/promises";
-import {promisify} from "util";
 import chalk from "chalk-template";
 import TransifexClient from "./txapi.js";
 import generateSource from "./generate-src.js";
@@ -32,6 +31,6 @@ const addonsSource = JSON.stringify(await generateSource());
 await fs.writeFile("addons-source.json", addonsSource, "utf8");
 console.log(chalk`{gray NOTE}: English source file generated: addons-source.json`);
 logUpload(await tx.uploadSource(
-    "o:scratch-addons:p:scratch-addons-extension:r:addons-translation",
+    "o:scratch-addons:p:scratch-addons-extension:r:addons-translation-new",
     addonsSource
 ));

@@ -31,7 +31,7 @@ export default class TransifexClient {
         this._token = token;
         this.endpoint = opts.endpoint || "https://rest.api.transifex.com";
         this.maxRetries = opts.maxRetries || 20;
-        this.interval = opts.interval || 15;
+        this.interval = opts.interval || 15000;
     }
 
     _getHeaders (headers = {}) {
@@ -105,6 +105,31 @@ export default class TransifexClient {
         const details = json?.data?.attributes?.details || {};
         // Fix bugs in the deleted string detection
         if (details.strings_deleted) details.strings_updated -= details.strings_deleted;
+        return details;
+    }
+
+    /**
+     * Uploads a translation file.
+     * @param {string} slug the slug identifying the resource
+     * @param {string} lang the language code with prefix l:
+     * @param {ArrayBuffer|Buffer|string} content the content
+     * @returns {Promise<object>} the details
+     */
+    async uploadTranslation(slug, lang, content) {
+        const formData = new FormData();
+        formData.append("resource", slug);
+        formData.append("content", new Blob([content]));
+        formData.append("language", lang);
+
+        const json = await this._asyncProcess(
+            "/resource_translations_async_uploads",
+            {
+                body: formData
+            }
+        );
+        const details = json?.data?.attributes?.details || {};
+        // Fix bugs in the deleted string detection
+        if (details.translations_deleted) details.translations_updated -= details.translations_deleted;
         return details;
     }
 

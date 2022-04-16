@@ -1,10 +1,9 @@
 import fs from "fs/promises";
-import {promisify} from "util";
 import chalk from "chalk-template";
 import {eachLimit} from "async";
 import {default as mkdirp} from "mkdirp";
 import TransifexClient from "./txapi.js";
-import generateSource from "./generate-src.js";
+import generateSource, {fixFormat} from "./generate-src.js";
 
 if (!process.env.TX_TOKEN) {
     console.error(chalk`{red ERROR}: TX_TOKEN is not set.`);
@@ -14,9 +13,9 @@ if (!process.env.TX_TOKEN) {
 const SA_ROOT = process.env.SA_ROOT || process.env.GITHUB_WORKSPACE || "./clone";
 
 // Number of files it can write at the same time
-const WRITE_CONCURRENCY = 20;
+const WRITE_CONCURRENCY = 40;
 // Number of API requests it can make at the same time
-const API_CONCURRENCY = 15;
+const API_CONCURRENCY = 30;
 
 // Require 90%> translation rate
 const GENERAL_THRESHOLD = 0.9;
@@ -38,13 +37,15 @@ try {
     source = await generateSource();
 }
 
+const getTranslation = key => source[key]?.string || source[key];
+
 const splitTranslation = translation => {
     const result = {};
     let c = 0;
     Object.keys(translation).forEach(key => {
         const addonId = key.includes("/") ? key.split("/")[0] : "_general";
         if (!result[addonId]) result[addonId] = {};
-        if (translation[key] === source[key]) return;
+        if (translation[key] === getTranslation(key)) return;
         if (translation[key] === "") return;
         result[addonId][key] = translation[key];
         c++;
@@ -104,10 +105,11 @@ const writeLocale = async item => {
             await fs.writeFile(`${path}messages.json`, restringified, "utf8");
             localesWithGeneral.push(saLocale);
             break;
-        case "o:scratch-addons:p:scratch-addons-extension:r:addons-translation":
+        case "o:scratch-addons:p:scratch-addons-extension:r:addons-translation-new":
             // Addons translation is weird. We need to separate the addons by keys.
             console.log(chalk`Pulled Addons Translation (addons-l10n): {cyan ${saLocale}}`);
             path = `${SA_ROOT}/addons-l10n/${saLocale}/`;
+            fixFormat("keyvaluejson", translationJSON);
             const [translations, available] = splitTranslation(translationJSON);
             n = available;
             all = Object.keys(source).length;
@@ -153,7 +155,7 @@ const writeLocale = async item => {
 };
 
 const mapResources = resources => resources.map(
-    resource => languages.map(
+    resource => resource.id === "o:scratch-addons:p:scratch-addons-extension:r:addons-translation" ? [] : languages.map(
         language => ({resource: resource.id, locale: language.id})
     )
 ).flat();
