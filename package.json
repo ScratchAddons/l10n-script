@@ -7,7 +7,7 @@
         "@octokit/auth-action": "^2.0.1",
         "@octokit/rest": "^19.0.4",
         "async": "^3.2.4",
-        "chalk": "^5.0.1",
+        "chalk": "^5.1.1",
         "chalk-template": "^0.4.0",
         "mkdirp": "^1.0.4",
         "node-fetch": "^3.2.10"
