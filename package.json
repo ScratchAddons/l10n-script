@@ -4,13 +4,13 @@
     "repository": "github:ScratchAddons/ScratchAddons",
     "private": true,
     "devDependencies": {
-        "@octokit/auth-action": "^2.0.2",
-        "@octokit/rest": "^19.0.5",
+        "@octokit/auth-action": "^2.0.3",
+        "@octokit/rest": "^19.0.7",
         "async": "^3.2.4",
         "chalk": "^5.2.0",
-        "chalk-template": "^0.5.0",
+        "chalk-template": "^1.0.0",
         "mkdirp": "^1.0.4",
-        "node-fetch": "^3.3.0"
+        "node-fetch": "^3.3.1"
     },
     "scripts": {
         "push": "node ./scripts/push.js",
@@ -21,6 +21,6 @@
     },
     "type": "module",
     "engines": {
-        "node": ">= 14.13.1"
+        "node": ">= 18"
     }
 }
