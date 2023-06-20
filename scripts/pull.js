@@ -1,7 +1,6 @@
 import fs from "fs/promises";
 import chalk from "chalk-template";
 import {eachLimit} from "async";
-import {default as mkdirp} from "mkdirp";
 import TransifexClient from "./txapi.js";
 import generateSource, {fixFormat} from "./generate-src.js";
 
@@ -101,7 +100,7 @@ const writeLocale = async item => {
             }
             const restringified = JSON.stringify(translationJSON);
             if (restringified === "{}") return;
-            await mkdirp(path);
+            await fs.mkdir(path, { recursive: true });
             await fs.writeFile(`${path}messages.json`, restringified, "utf8");
             localesWithGeneral.push(saLocale);
             break;
@@ -137,7 +136,7 @@ const writeLocale = async item => {
                     hasGeneral = true;
                     return;
                 }
-                await mkdirp(path);
+                await fs.mkdir(path, { recursive: true });
                 await fs.writeFile(`${path}${addonId}.json`, restringified, "utf8");
                 generated = true;
             });
@@ -146,7 +145,7 @@ const writeLocale = async item => {
             // 2) other parts are translated
             if (generated || hasGeneral) {
                 const restringified = JSON.stringify(generalTranslation);
-                await mkdirp(path);
+                await fs.mkdir(path, { recursive: true });
                 await fs.writeFile(`${path}_general.json`, restringified, "utf8");
                 localesWithAddons.push(saLocale);
             }
@@ -176,7 +175,7 @@ await (async () => {
     throw e;
   }
   console.log(chalk`{green NOTE}: Portuguese translation copied from Portuguese (Brazil)`);
-  await mkdirp(`${SA_ROOT}/_locales/pt_PT/`);
+  await fs.mkdir(`${SA_ROOT}/_locales/pt_PT/`, { recursive: true });
   await fs.copyFile(
     `${SA_ROOT}/_locales/pt_BR/messages.json`,
     `${SA_ROOT}/_locales/pt_PT/messages.json`

@@ -4,12 +4,11 @@
     "repository": "github:ScratchAddons/ScratchAddons",
     "private": true,
     "devDependencies": {
-        "@octokit/auth-action": "^2.0.3",
-        "@octokit/rest": "^19.0.7",
+        "@octokit/auth-action": "^3.0.2",
+        "@octokit/rest": "^19.0.13",
         "async": "^3.2.4",
         "chalk": "^5.2.0",
-        "chalk-template": "^1.0.0",
-        "mkdirp": "^1.0.4",
+        "chalk-template": "^1.1.0",
         "node-fetch": "^3.3.1"
     },
     "scripts": {
