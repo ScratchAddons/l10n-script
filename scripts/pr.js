@@ -22,13 +22,20 @@ const year = now.getFullYear();
 const month = String(now.getMonth() + 1).padStart(2, "0");
 const date = String(now.getDate()).padStart(2, "0");
 
-await octokit.rest.pulls.create({
+const {data: pull} = await octokit.rest.pulls.create({
     owner,
     repo,
     title: `Translation update: ${year}/${month}/${date}`,
     head: `${owner}:${branch}`,
     base: DEFAULT_BRANCH,
-    body: "Daily translation update (via GitHub Actions)."
+    body: "Daily translation update (via GitHub Actions).",
+});
+
+await octokit.rest.issues.addLabels({
+    owner,
+    repo,
+    issue_number: pull.number,
+    label: ["scope: l10n"],
 });
 
 console.log("Created Pull Request.");
