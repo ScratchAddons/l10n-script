@@ -6,7 +6,9 @@ git config user.name "scratchaddons-bot[bot]"
 
 if git status | grep -q "git add"; then
     echo New strings available. Pushing to GitHub...
-    BRANCH=tx-$(date +"%Y%m%d%H%M%S")
+    BRANCH=tx
+    git branch -D $BRANCH
+    git push origin --delete $BRANCH
     git checkout -b $BRANCH
     git add _locales/*
     git add addons-l10n/*
