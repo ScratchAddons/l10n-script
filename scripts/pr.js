@@ -35,7 +35,7 @@ await octokit.rest.issues.addLabels({
     owner,
     repo,
     issue_number: pull.number,
-    label: ["scope: l10n"],
+    labels: ["scope: l10n"],
 });
 
 console.log("Created Pull Request.");
