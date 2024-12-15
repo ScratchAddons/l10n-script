@@ -8,10 +8,11 @@ if git status | grep -q "git add"; then
     echo New strings available. Pushing to GitHub...
     BRANCH=tx
 
-    git show-ref --verify --quiet refs/heads/$BRANCH && BRANCH_EXISTS=true
-    if [ -n "$BRANCH_EXISTS" ]; then
+    if git show-ref --verify --quiet refs/heads/$BRANCH; then
+        BRANCH_EXISTS=true
         git checkout $BRANCH
     else
+        BRANCH_EXISTS=false
         git checkout -b $BRANCH
     fi
 
@@ -21,10 +22,10 @@ if git status | grep -q "git add"; then
     git push origin $BRANCH
     echo Pushed as $BRANCH
 
-    if [ -n "$BRANCH_EXISTS" ]; then
-        echo "Skipping PR creation"
-    else
+    if [ "$BRANCH_EXISTS" = "false" ]; then
         echo "Creating a pull request..."
         node $GITHUB_ACTION_PATH/scripts/pr.js "$BRANCH"
+    else
+        echo "Skipping PR creation"
     fi
 fi
