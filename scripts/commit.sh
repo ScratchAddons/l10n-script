@@ -7,14 +7,25 @@ git config user.name "scratchaddons-bot[bot]"
 if git status | grep -q "git add"; then
     echo New strings available. Pushing to GitHub...
     BRANCH=tx
-    git branch -D $BRANCH
-    git push origin --delete $BRANCH
-    git checkout -b $BRANCH
+
+    if git show-ref --verify --quiet refs/heads/$BRANCH; then
+        BRANCH_EXISTS=true
+        git checkout $BRANCH
+    else
+        BRANCH_EXISTS=false
+        git checkout -b $BRANCH
+    fi
+
     git add _locales/*
     git add addons-l10n/*
     git commit --no-gpg-sign -m "New strings from Transifex"
     git push origin $BRANCH
     echo Pushed as $BRANCH
-    
-    node $GITHUB_ACTION_PATH/scripts/pr.js "$BRANCH"
+
+    if [ "$BRANCH_EXISTS" = "false" ]; then
+        echo "Creating a pull request..."
+        node $GITHUB_ACTION_PATH/scripts/pr.js "$BRANCH"
+    else
+        echo "Skipping PR creation"
+    fi
 fi
