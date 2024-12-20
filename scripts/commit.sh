@@ -8,11 +8,12 @@ if git status | grep -q "git add"; then
     echo New strings available. Pushing to GitHub...
     BRANCH=tx
 
-    if git show-ref --verify --quiet refs/heads/$BRANCH; then
+    if git ls-remote -q --exit-code --heads origin $BRANCH; then
         BRANCH_EXISTS=true
         git checkout $BRANCH
     else
         BRANCH_EXISTS=false
+        git branch -D $BRANCH
         git checkout -b $BRANCH
     fi
 
