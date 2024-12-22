@@ -8,9 +8,11 @@ if git status | grep -q "git add"; then
     echo New strings available. Pushing to GitHub...
     BRANCH=tx
 
+    git fetch
+
     if git ls-remote -q --exit-code --heads origin $BRANCH; then
         BRANCH_EXISTS=true
-        git checkout $BRANCH
+        git checkout --track origin/$BRANCH
     else
         BRANCH_EXISTS=false
         git branch -D $BRANCH
@@ -20,13 +22,14 @@ if git status | grep -q "git add"; then
     git add _locales/*
     git add addons-l10n/*
     git commit --no-gpg-sign -m "New strings from Transifex"
-    git push origin $BRANCH
-    echo Pushed as $BRANCH
+    echo Pushing as $BRANCH
 
     if [ "$BRANCH_EXISTS" = "false" ]; then
         echo "Creating a pull request..."
+        git push origin $BRANCH
         node $GITHUB_ACTION_PATH/scripts/pr.js "$BRANCH"
     else
+        git push
         echo "Skipping PR creation"
     fi
 fi
