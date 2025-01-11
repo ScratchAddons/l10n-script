@@ -132,6 +132,13 @@ export default async () => {
                     developer_comment: `Setting name for addon "${addonManifest.name}"`
                 };
 
+                if (setting.description) {
+                    addonMessages[`${addonId}/@settings-description-${settingId}`] = {
+                        string: setting.description,
+                        developer_comment: `Tooltip description for addon "${addonManifest.name}"'s setting "${setting.name}"`
+                    };
+                }
+
                 switch (setting.type) {
                     case "string":
                         if (!setting.default) break;
